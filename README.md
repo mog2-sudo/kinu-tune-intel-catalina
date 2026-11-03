@@ -1,3 +1,22 @@
+# Intel Mac向けCatalina互換ビルド
+
+このフォークでは、Kinu Tune v0.1.4を基にした非公式のIntel Mac向けビルドを配布しています。
+対象はIntel（x86_64）のMacとmacOS 10.15以降です。
+VST3、AU、AIモデルを同梱し、AI処理はCPUで動きます。
+
+**[インストーラーを直接ダウンロード（PKG、約160MB）](https://github.com/mog2-sudo/kinu-tune-intel-catalina/releases/download/v0.1.4-intel-catalina/Kinu-Tune-0.1.4-macOS-Intel-Catalina.pkg)**
+
+[手動導入用ZIP](https://github.com/mog2-sudo/kinu-tune-intel-catalina/releases/download/v0.1.4-intel-catalina/Kinu-Tune-0.1.4-macOS-Intel-Catalina.zip) / [ソースと検査結果を含むリリースページ](https://github.com/mog2-sudo/kinu-tune-intel-catalina/releases/tag/v0.1.4-intel-catalina)
+
+Intel Mac（macOS 15）で9項目のテストとAU検査に合格しています。
+**macOS 10.15.7実機とDAWでの動作は未確認**のため、実機確認待ちのプレリリースです。
+導入手順はリリースページにあります。
+
+元のプロジェクトは [keinoaza666-stack/kinu-tune](https://github.com/keinoaza666-stack/kinu-tune) です。
+以下には元プロジェクトのREADMEを残しています。
+
+---
+
 <div align="center">
   <h1>Kinu Tune</h1>
   <p>Cubase VariAudio 風の操作で使える AI ボーカルピッチエディター(VST® 3 / ARA)。<br>
