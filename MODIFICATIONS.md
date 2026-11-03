@@ -19,6 +19,8 @@ Prepared from Kinu Tune v0.1.4 for an Intel Mac running macOS 10.15.7.
 The deployment target is configurable; Core ML can be disabled in favour of
 the existing ONNX CPU vocoder. ONNX Runtime 1.19.2 is rebuilt from source for
 x86_64 / macOS 10.15 because its official archive requires macOS 11.
+Its log timestamps use the already bundled date library explicitly, avoiding
+C++20 chrono formatting that requires macOS 13.3 with current Apple SDKs.
 Installer requirements, CPU capability reporting and binary compatibility
 checks were added. Original authorship, plug-in identifiers and licenses
 are retained. These changes were prepared with Codex for the requesting user.

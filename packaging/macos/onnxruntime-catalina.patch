@@ -1,0 +1,14 @@
+diff --git a/onnxruntime/core/common/logging/sinks/ostream_sink.cc b/onnxruntime/core/common/logging/sinks/ostream_sink.cc
+--- a/onnxruntime/core/common/logging/sinks/ostream_sink.cc
++++ b/onnxruntime/core/common/logging/sinks/ostream_sink.cc
+@@ -44,7 +44,9 @@ void OStreamSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id,
+   }
+ #endif
+ 
+-  msg << timestamp << " [" << message.SeverityPrefix() << ":" << message.Category() << ":" << logger_id << ", "
++  // Avoid C++20 chrono formatting, which requires macOS 13.3 in modern libc++.
++  // The bundled date library preserves the timestamp format on Catalina.
++  msg << date::format("%F %T", timestamp) << " [" << message.SeverityPrefix() << ":" << message.Category() << ":" << logger_id << ", "
+       << message.Location().ToString() << "] " << message.Message();
+ 
+ #ifndef ORT_MINIMAL_BUILD

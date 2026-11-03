@@ -45,7 +45,7 @@ jobs:
             .build-tools/ort
             .build-tools/ort-dependency-sources
             .build-tools/ort-build-info.txt
-          key: ort-ffceed9d-x86_64-10.15-cpu-xcode16.4-v2
+          key: ort-ffceed9d-x86_64-10.15-cpu-xcode16.4-v3
       - name: Build ONNX Runtime for Catalina (CPU only)
         if: steps.ort-cache.outputs.cache-hit != 'true'
         run: |
@@ -55,6 +55,7 @@ jobs:
           git -C .build-tools/eigen-src remote add origin https://gitlab.com/libeigen/eigen.git
           git -C .build-tools/eigen-src fetch --depth 1 origin e7248b26a1ed53fa030c5c459f7ea095dfd276ac
           git -C .build-tools/eigen-src checkout --detach FETCH_HEAD
+          git -C .build-tools/onnxruntime-src apply "$PWD/packaging/macos/onnxruntime-catalina.patch"
           python .build-tools/onnxruntime-src/tools/ci_build/build.py \
             --build_dir "$PWD/.build-tools/ort-build" --config Release \
             --cmake_generator Ninja --parallel 3 --build_shared_lib \
@@ -72,6 +73,7 @@ jobs:
           cp -R .build-tools/eigen-src .build-tools/ort-dependency-sources/
           {
             git -C .build-tools/onnxruntime-src rev-parse HEAD
+            git -C .build-tools/onnxruntime-src diff
             xcodebuild -version
             cmake --version
             cat .build-tools/ort-build/Release/CMakeCache.txt
@@ -84,7 +86,7 @@ jobs:
             .build-tools/ort
             .build-tools/ort-dependency-sources
             .build-tools/ort-build-info.txt
-          key: ort-ffceed9d-x86_64-10.15-cpu-xcode16.4-v2
+          key: ort-ffceed9d-x86_64-10.15-cpu-xcode16.4-v3
       - name: Configure Kinu Tune for Intel Catalina
         run: >
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
