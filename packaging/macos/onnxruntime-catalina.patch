@@ -1,14 +1,14 @@
-diff --git a/onnxruntime/core/common/logging/sinks/ostream_sink.cc b/onnxruntime/core/common/logging/sinks/ostream_sink.cc
---- a/onnxruntime/core/common/logging/sinks/ostream_sink.cc
-+++ b/onnxruntime/core/common/logging/sinks/ostream_sink.cc
-@@ -44,7 +44,9 @@ void OStreamSink::SendImpl(const Timestamp& timestamp, const std::string& logger_id,
-   }
- #endif
+diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
+--- a/cmake/CMakeLists.txt
++++ b/cmake/CMakeLists.txt
+@@ -41,7 +41,9 @@ include(CheckFunctionExists)
  
--  msg << timestamp << " [" << message.SeverityPrefix() << ":" << message.Category() << ":" << logger_id << ", "
-+  // Avoid C++20 chrono formatting, which requires macOS 13.3 in modern libc++.
-+  // The bundled date library preserves the timestamp format on Catalina.
-+  msg << date::format("%F %T", timestamp) << " [" << message.SeverityPrefix() << ":" << message.Category() << ":" << logger_id << ", "
-       << message.Location().ToString() << "] " << message.Message();
- 
- #ifndef ORT_MINIMAL_BUILD
+ # TODO: update this once all system adapt c++20
+ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+-set(CMAKE_CXX_STANDARD 20)
++# Catalina uses the same C++17/date logging path as Windows and Linux.
++# Modern libc++'s C++20 chrono formatting requires macOS 13.3.
++set(CMAKE_CXX_STANDARD 17)
+ else()
+ set(CMAKE_CXX_STANDARD 17)
+ endif()

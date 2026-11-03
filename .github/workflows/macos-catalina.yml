@@ -45,7 +45,7 @@ jobs:
             .build-tools/ort
             .build-tools/ort-dependency-sources
             .build-tools/ort-build-info.txt
-          key: ort-ffceed9d-x86_64-10.15-cpu-xcode16.4-v3
+          key: ort-ffceed9d-x86_64-10.15-cpu-xcode16.4-cxx17-v4
       - name: Build ONNX Runtime for Catalina (CPU only)
         if: steps.ort-cache.outputs.cache-hit != 'true'
         run: |
@@ -86,7 +86,7 @@ jobs:
             .build-tools/ort
             .build-tools/ort-dependency-sources
             .build-tools/ort-build-info.txt
-          key: ort-ffceed9d-x86_64-10.15-cpu-xcode16.4-v3
+          key: ort-ffceed9d-x86_64-10.15-cpu-xcode16.4-cxx17-v4
       - name: Configure Kinu Tune for Intel Catalina
         run: >
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
