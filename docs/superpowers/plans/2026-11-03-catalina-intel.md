@@ -35,8 +35,8 @@
 
 - [x] Add and run compatibility configuration tests: normal defaults remain 13.0/universal/Core ML; x86_64/10.15 defaults to CPU; explicit Core ML below 13.0 is rejected.
 - [x] Implement those configuration choices, use a caller-supplied ONNX Runtime, and reject the incompatible official archive on Catalina.
-- [ ] Gate Core ML vocoder selection and implementation with HAVE_COREML; report CPU support accurately.
-- [ ] Run the existing model inference test on the Intel Mac, including actual GAME / FCPE / vocoder and PSOLA inference, and assert CPU support.
+- [x] Gate Core ML vocoder selection and implementation with HAVE_COREML; report CPU support accurately.
+- [x] Run the existing model inference test on the Intel Mac, including actual GAME / FCPE / vocoder and PSOLA inference, and assert CPU support.
 
 ### Task 2: Produce reviewable distribution artifacts
 
@@ -46,9 +46,9 @@
 
 - [x] Add and run tests for the binary auditor with Mach-O fixtures covering compatible/incompatible deployment targets and architectures.
 - [x] Build ONNX Runtime at its immutable v1.19.2 source commit with CPU providers and target 10.15; cache only this configuration.
-- [ ] Build VST3/AU and the existing tests; run CTest, AU validation, and bundle/installer audits on Intel macOS.
-- [ ] Package ZIP, PKG, checksums, verification report, and complete corresponding source (including submodules and runtime source/dependencies).
-- [ ] Download the artifacts to F:/KinuTune/dist, inspect their contents and checksums, and obtain an independent final code review.
+- [x] Build VST3/AU and the existing tests; run CTest, AU validation, and bundle/installer audits on Intel macOS.
+- [x] Package ZIP, PKG, checksums, verification report, and complete corresponding source (including submodules and runtime source/dependencies).
+- [x] Download the artifacts to F:/KinuTune/dist, inspect their contents and checksums, and obtain an independent final code review.
 
 ## Progress and decisions
 
@@ -57,3 +57,5 @@
 - Execution: continue in this session under the user's build request. No changes to the upstream repository are authorized or needed. Use a private repository on the authenticated account solely to obtain Mac build artifacts.
 
 - Runtime milestone: C++17 CPU runtime built successfully and cached; Intel plug-in/test build in progress in run 41584654065 (source 5c9dffb).
+
+- Completed: build 41591147435 / program source 7955ef8. All 9 CTests, AU validation, strict signatures and binary/installer audits passed on Intel macOS 15. Local delivery verification passed all hashes, Mach-O targets, model bytes, ZIP checks and 43,022 source entries. Artifacts: dist/. Catalina hardware/DAW testing remains unverified.
