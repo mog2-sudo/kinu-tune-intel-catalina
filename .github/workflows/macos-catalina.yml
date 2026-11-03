@@ -152,11 +152,33 @@ jobs:
           python tools/macos/check-compatibility.py "$release" > dist/compatibility.json
           codesign --verify --deep --strict --verbose=2 "$release/Kinu Tune.vst3"
           codesign --verify --deep --strict --verbose=2 "$release/Kinu Tune.component"
+          ditto -c -k --keepParent --norsrc --noextattr \
+            "$release" dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina.zip
       - name: Validate Audio Unit on the Intel Mac
         run: |
+          python - <<'PY' > dist/au-component.json
+          import json, plistlib
+          with open('dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina/Kinu Tune.component/Contents/Info.plist', 'rb') as file:
+              info = plistlib.load(file)
+          components = info['AudioComponents']
+          print(json.dumps(components, indent=2))
+          assert any((c['type'], c['subtype'], c['manufacturer']) == ('aufx', 'Kntu', 'Kein') for c in components)
+          PY
+          cat dist/au-component.json
           mkdir -p "$HOME/Library/Audio/Plug-Ins/Components"
           ditto 'dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina/Kinu Tune.component' \
             "$HOME/Library/Audio/Plug-Ins/Components/Kinu Tune.component"
+          touch "$HOME/Library/Audio/Plug-Ins/Components/Kinu Tune.component"
+          # The registrar may have scanned the user's Library before this copy.
+          # Refresh only this ephemeral CI runner's audio component registry.
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          for attempt in {1..10}; do
+            auval -a > dist/au-components.txt
+            if awk '$1 == "aufx" && $2 == "Kntu" && $3 == "Kein" { found=1 } END { exit !found }' dist/au-components.txt; then
+              break
+            fi
+            sleep 1
+          done
           set -o pipefail
           auval -v aufx Kntu Kein | tee dist/auval.txt
       - name: Package installer, ZIP and corresponding complete source
@@ -177,9 +199,6 @@ jobs:
           assert root.find('domains').get('enable_currentUserHome') == 'true'
           print('Installer architecture, minimum OS and user install domain verified')
           PY
-          ditto -c -k --keepParent --norsrc --noextattr \
-            dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina \
-            dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina.zip
           python tools/macos/pack-sources.py dist/Kinu-Tune-0.1.4-Intel-Catalina-source-with-submodules.tar.gz
           cp packaging/INSTALL-macOS-Catalina.txt dist/INSTALL.txt
           cp .build-tools/ort-build-info.txt dist/ort-build-info.txt
