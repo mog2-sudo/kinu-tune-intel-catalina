@@ -21,6 +21,8 @@
 # The check reads one line at a time. A call through a member pointer, or one
 # split across lines, is not caught; dev-rules.md asks not to write them.
 
+cmake_minimum_required(VERSION 3.22)
+
 if(NOT SOURCE_DIR OR NOT RULE)
     message(FATAL_ERROR "SourceGuard: pass -DSOURCE_DIR=<repo>/Source -DRULE=<rule>")
 endif()

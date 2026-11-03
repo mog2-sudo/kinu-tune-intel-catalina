@@ -33,8 +33,8 @@
 
 **Interfaces:** Add PITCHNET_USE_COREML (BOOL) and PITCHNET_ONNXRUNTIME_ROOT (PATH). CPU builds omit HAVE_COREML. The deployment target remains caller-configurable.
 
-- [ ] Add and run compatibility configuration tests: normal defaults remain 13.0/universal/Core ML; x86_64/10.15 defaults to CPU; explicit Core ML below 13.0 is rejected.
-- [ ] Implement those configuration choices, use a caller-supplied ONNX Runtime, and reject the incompatible official archive on Catalina.
+- [x] Add and run compatibility configuration tests: normal defaults remain 13.0/universal/Core ML; x86_64/10.15 defaults to CPU; explicit Core ML below 13.0 is rejected.
+- [x] Implement those configuration choices, use a caller-supplied ONNX Runtime, and reject the incompatible official archive on Catalina.
 - [ ] Gate Core ML vocoder selection and implementation with HAVE_COREML; report CPU support accurately.
 - [ ] Run the existing model inference test on the Intel Mac, including actual GAME / FCPE / vocoder and PSOLA inference, and assert CPU support.
 
@@ -44,8 +44,8 @@
 
 **Interfaces:** The build supplies architecture/minimum OS/source URL to the installer. The audit takes a release folder and rejects incompatible Mach-O files, Core ML dependencies, or unresolved non-system dylibs.
 
-- [ ] Add and run tests for the binary auditor with Mach-O fixtures covering compatible/incompatible deployment targets and architectures.
-- [ ] Build ONNX Runtime at its immutable v1.19.2 source commit with CPU providers and target 10.15; cache only this configuration.
+- [x] Add and run tests for the binary auditor with Mach-O fixtures covering compatible/incompatible deployment targets and architectures.
+- [x] Build ONNX Runtime at its immutable v1.19.2 source commit with CPU providers and target 10.15; cache only this configuration.
 - [ ] Build VST3/AU and the existing tests; run CTest, AU validation, and bundle/installer audits on Intel macOS.
 - [ ] Package ZIP, PKG, checksums, verification report, and complete corresponding source (including submodules and runtime source/dependencies).
 - [ ] Download the artifacts to F:/KinuTune/dist, inspect their contents and checksums, and obtain an independent final code review.
@@ -55,3 +55,5 @@
 - Reconnaissance: official ONNX Runtime x86_64 1.19.2 dylib has LC_BUILD_VERSION minos 11.0.0; archive SHA-256 matches upstream's pinned hash.
 - Dedicated checkout: this directory was empty; cloned the exact tag and recursive submodules. Work in a new local compatibility branch; a second worktree adds no isolation benefit.
 - Execution: continue in this session under the user's build request. No changes to the upstream repository are authorized or needed. Use a private repository on the authenticated account solely to obtain Mac build artifacts.
+
+- Runtime milestone: C++17 CPU runtime built successfully and cached; Intel plug-in/test build in progress in run 41584654065 (source 5c9dffb).
