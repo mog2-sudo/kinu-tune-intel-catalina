@@ -220,8 +220,10 @@ int main(int argc, char **argv)
                 support == AiResynthesisSupport::Accelerated ? "accelerated"
                 : support == AiResynthesisSupport::CpuOnly   ? "CPU only"
                                                              : "unavailable");
-#if JUCE_MAC
+#if JUCE_MAC && defined(HAVE_COREML)
     CHECK(support == AiResynthesisSupport::Accelerated);
+#elif JUCE_MAC
+    CHECK(support == AiResynthesisSupport::CpuOnly);
 #elif JUCE_WINDOWS
     CHECK(support != AiResynthesisSupport::Unavailable);
 #endif

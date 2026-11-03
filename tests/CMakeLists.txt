@@ -131,6 +131,11 @@ if(WIN32 AND ONNXRUNTIME_DLLS)
 endif()
 
 # Calls that must go through one entry point (see SourceGuard.cmake).
+foreach(compatibility_case IN ITEMS default catalina invalid-coreml)
+    add_test(NAME MacOSCompatibility_${compatibility_case}
+        COMMAND ${CMAKE_COMMAND} -DCASE=${compatibility_case}
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/MacOSCompatibilityTests.cmake)
+endforeach()
 foreach(guard_rule IN ITEMS pitch-writes audition-output render-controllers)
     add_test(NAME SourceGuard_${guard_rule}
              COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR}/Source

@@ -1,0 +1,155 @@
+name: Intel macOS Catalina build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  intel-catalina:
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '10.15'
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - name: Install reproducible build tools
+        run: python -m pip install cmake==3.31.6 ninja==1.11.1.4
+      - name: Check compatibility configuration and auditor
+        run: |
+          for case in default catalina invalid-coreml; do
+            cmake -DCASE="$case" -P tests/MacOSCompatibilityTests.cmake
+          done
+          python -m unittest discover -s tests -p test_macos_compatibility.py
+      - name: Checkout ONNX Runtime 1.19.2 source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: microsoft/onnxruntime
+          ref: ffceed9d44f2f3efb9dd69fa75fea51163c91d91
+          path: .build-tools/onnxruntime-src
+          submodules: recursive
+          persist-credentials: false
+      - name: Restore Catalina CPU runtime
+        id: ort-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            .build-tools/ort
+            .build-tools/ort-dependency-sources
+            .build-tools/ort-build-info.txt
+          key: ort-ffceed9d-x86_64-10.15-cpu-xcode16.4-v1
+      - name: Build ONNX Runtime for Catalina (CPU only)
+        if: steps.ort-cache.outputs.cache-hit != 'true'
+        run: |
+          python .build-tools/onnxruntime-src/tools/ci_build/build.py \
+            --build_dir "$PWD/.build-tools/ort-build" --config Release \
+            --cmake_generator Ninja --parallel 3 --build_shared_lib \
+            --skip_tests --skip_submodule_sync --compile_no_warning_as_error \
+            --osx_arch x86_64 --apple_deploy_target 10.15 \
+            --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
+              onnxruntime_USE_COREML=OFF onnxruntime_ENABLE_CPU_FP16_OPS=OFF
+          mkdir -p .build-tools/ort/include .build-tools/ort/lib .build-tools/ort-dependency-sources
+          cp .build-tools/onnxruntime-src/include/onnxruntime/core/session/*.h .build-tools/ort/include/
+          cp -P .build-tools/ort-build/Release/libonnxruntime*.dylib .build-tools/ort/lib/
+          for dependency in .build-tools/ort-build/Release/_deps/*-src; do
+            cp -R "$dependency" .build-tools/ort-dependency-sources/
+          done
+          {
+            git -C .build-tools/onnxruntime-src rev-parse HEAD
+            xcodebuild -version
+            cmake --version
+            cat .build-tools/ort-build/Release/CMakeCache.txt
+          } > .build-tools/ort-build-info.txt
+      - name: Configure Kinu Tune for Intel Catalina
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
+          -DPITCHNET_USE_COREML=OFF -DPITCHNET_BUILD_TESTS=ON
+          -DPITCHNET_ONNXRUNTIME_ROOT="$PWD/.build-tools/ort"
+          -DPITCHNET_REQUIRE_MODELS=ON -DUSE_GPU=OFF
+      - name: Build VST3, AU and audio regression tests
+        run: >
+          cmake --build build --parallel 3 --target
+          PitchNetPlugin_VST3 PitchNetPlugin_AU ModelInferenceTests
+          AiResynthesisChoiceTests OnnxRuntimeAvailabilityTests
+      - name: Test analysis, synthesis and AI engine switching
+        run: |
+          mkdir -p dist
+          set -o pipefail
+          ctest --test-dir build --output-on-failure \
+            -R '(ModelInferenceTests|AiResynthesisChoiceTests|OnnxRuntimeAvailabilityTests|MacOSCompatibility_|SourceGuard_)' \
+            | tee dist/tests.txt
+      - name: Stage distribution and audit every Mach-O binary
+        run: |
+          mkdir -p 'dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina'
+          release="$PWD/dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina"
+          ditto 'build/PitchNetPlugin_artefacts/Release/VST3/Kinu Tune.vst3' "$release/Kinu Tune.vst3"
+          ditto 'build/PitchNetPlugin_artefacts/Release/AU/Kinu Tune.component' "$release/Kinu Tune.component"
+          mkdir -p "$release/models"
+          for model in fcpe.onnx cent_table.bin mel_filterbank.bin pc_nsf_hifigan.onnx GAME; do
+            ditto "Resources/models/$model" "$release/models/$model"
+          done
+          for document in LICENSE THIRD_PARTY_NOTICES.txt MODIFICATIONS.md licenses; do
+            ditto "$document" "$release/$document"
+          done
+          cp packaging/INSTALL-macOS-Catalina.txt "$release/INSTALL.txt"
+          cp .build-tools/onnxruntime-src/LICENSE "$release/licenses/ONNX-Runtime-LICENSE.txt"
+          cp .build-tools/onnxruntime-src/ThirdPartyNotices.txt "$release/licenses/ONNX-Runtime-ThirdPartyNotices.txt"
+          python tools/macos/check-compatibility.py "$release" > dist/compatibility.json
+          codesign --verify --deep --strict --verbose=2 "$release/Kinu Tune.vst3"
+          codesign --verify --deep --strict --verbose=2 "$release/Kinu Tune.component"
+      - name: Validate Audio Unit on the Intel Mac
+        run: |
+          mkdir -p "$HOME/Library/Audio/Plug-Ins/Components"
+          ditto 'dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina/Kinu Tune.component' \
+            "$HOME/Library/Audio/Plug-Ins/Components/Kinu Tune.component"
+          set -o pipefail
+          auval -v aufx Kntu Kein | tee dist/auval.txt
+      - name: Package installer, ZIP and corresponding complete source
+        env:
+          PITCHNET_PACKAGE_ARCH: x86_64
+          PITCHNET_PACKAGE_MIN_OS: '10.15'
+          PITCHNET_PACKAGE_SOURCE: Kinu-Tune-0.1.4-Intel-Catalina-source-with-submodules.tar.gz
+        run: |
+          bash packaging/macos/build-pkg.sh \
+            dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina 0.1.4 \
+            dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina.pkg
+          pkgutil --expand dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina.pkg .build-tools/pkg-check
+          python - <<'PY'
+          import pathlib, xml.etree.ElementTree as ET
+          root = ET.parse('.build-tools/pkg-check/Distribution').getroot()
+          assert root.find('options').get('hostArchitectures') == 'x86_64'
+          assert root.find('volume-check/allowed-os-versions/os-version').get('min') == '10.15'
+          assert root.find('domains').get('enable_currentUserHome') == 'true'
+          print('Installer architecture, minimum OS and user install domain verified')
+          PY
+          ditto -c -k --keepParent --norsrc --noextattr \
+            dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina \
+            dist/Kinu-Tune-0.1.4-macOS-Intel-Catalina.zip
+          python tools/macos/pack-sources.py dist/Kinu-Tune-0.1.4-Intel-Catalina-source-with-submodules.tar.gz
+          cp packaging/INSTALL-macOS-Catalina.txt dist/INSTALL.txt
+          cp .build-tools/ort-build-info.txt dist/ort-build-info.txt
+          cd dist
+          shasum -a 256 *.pkg *.zip *.tar.gz > SHA256SUMS.txt
+      - name: Save build artifacts and verification reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Kinu-Tune-0.1.4-Intel-Catalina
+          path: |
+            dist/*.pkg
+            dist/*.zip
+            dist/*.tar.gz
+            dist/*.txt
+            dist/*.json
+            build/Testing/Temporary/LastTest.log
+          if-no-files-found: error
+          retention-days: 14

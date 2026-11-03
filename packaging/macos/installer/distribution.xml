@@ -8,10 +8,10 @@
     <!-- Install into the current user's home only: the same places as the
          manual install, and no administrator password. -->
     <domains enable_anywhere="false" enable_currentUserHome="true" enable_localSystem="false"/>
-    <options customize="allow" require-scripts="false" hostArchitectures="arm64"/>
+    <options customize="allow" require-scripts="false" hostArchitectures="@ARCHITECTURE@"/>
     <volume-check>
         <allowed-os-versions>
-            <os-version min="13.0"/>
+            <os-version min="@MIN_OS@"/>
         </allowed-os-versions>
     </volume-check>
     <choices-outline>

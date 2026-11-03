@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../JuceHeader.h"
-#if __APPLE__
+#ifdef HAVE_COREML
 #include "CoreMLVocoderBackend.h"
 #endif
 #include <atomic>
@@ -22,7 +22,7 @@
 #endif
 
 /**
- * PC-NSF-HiFiGAN Vocoder wrapper using Core ML on macOS and ONNX Runtime elsewhere.
+ * PC-NSF-HiFiGAN Vocoder wrapper using optional Core ML or ONNX Runtime CPU inference.
  * Converts mel spectrogram + F0 to waveform with pitch control.
  */
 class Vocoder
@@ -122,7 +122,7 @@ private:
 #endif
 
   juce::File modelFile;
-#if __APPLE__
+#ifdef HAVE_COREML
   juce::File coreMLModelFile;
   std::unique_ptr<CoreMLVocoderBackend> coreMLBackend;
   bool usingCoreMLModel = false;
@@ -173,7 +173,7 @@ private:
   Ort::SessionOptions createSessionOptions();
 #endif
 
-#if __APPLE__
+#ifdef HAVE_COREML
   std::vector<float>
   inferCoreMLChunkLocked(const std::vector<std::vector<float>> &mel,
                          const std::vector<float> &f0,

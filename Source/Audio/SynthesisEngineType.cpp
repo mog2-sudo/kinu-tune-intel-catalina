@@ -156,9 +156,9 @@ SynthesisEngineType synthesisEngineTypeForSavedPreference(SynthesisEngineType ty
 
 AiResynthesisSupport getAiResynthesisSupport()
 {
-#if JUCE_MAC
+#if JUCE_MAC && defined(HAVE_COREML)
   return AiResynthesisSupport::Accelerated;
-#elif defined(_WIN32) && defined(HAVE_ONNXRUNTIME)
+#elif (JUCE_MAC || defined(_WIN32)) && defined(HAVE_ONNXRUNTIME)
   if (!OnnxRuntime::isAvailable())
     return AiResynthesisSupport::Unavailable;
 

@@ -13,6 +13,18 @@ version 3.
 
 The full history of the changes is in the git log of this repository.
 
+## Intel macOS Catalina compatibility build (2026-11-03)
+
+Prepared from Kinu Tune v0.1.4 for an Intel Mac running macOS 10.15.7.
+The deployment target is configurable; Core ML can be disabled in favour of
+the existing ONNX CPU vocoder. ONNX Runtime 1.19.2 is rebuilt from source for
+x86_64 / macOS 10.15 because its official archive requires macOS 11.
+Installer requirements, CPU capability reporting and binary compatibility
+checks were added. Original authorship, plug-in identifiers and licenses
+are retained. These changes were prepared with Codex for the requesting user.
+The accompanying source archive includes the modified plug-in, submodules,
+runtime sources and downloaded runtime dependency sources.
+
 ## Summary of changes
 
 ### Identity

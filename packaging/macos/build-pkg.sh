@@ -30,6 +30,11 @@ src=$1
 version=$2
 out=$3
 here=$(cd "$(dirname "$0")" && pwd)
+architecture=${PITCHNET_PACKAGE_ARCH:-arm64}
+minimum_os=${PITCHNET_PACKAGE_MIN_OS:-13.0}
+source_reference=${PITCHNET_PACKAGE_SOURCE:-https://github.com/keinoaza666-stack/kinu-tune}
+case "$architecture" in arm64|x86_64) ;; *) echo "invalid architecture: $architecture" >&2; exit 1;; esac
+[[ "$minimum_os" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { echo "invalid minimum OS" >&2; exit 1; }
 
 docs=(LICENSE THIRD_PARTY_NOTICES.txt MODIFICATIONS.md licenses)
 for item in "Kinu Tune.vst3" "Kinu Tune.component" models "${docs[@]}"; do
@@ -103,10 +108,14 @@ mkdir -p "$work/resources"
 for lang in en ja; do
     mkdir -p "$work/resources/$lang.lproj"
     for f in "$here/installer/$lang.lproj/"*; do
-        sed "s/@VERSION@/$version/g" "$f" > "$work/resources/$lang.lproj/$(basename "$f")"
+        sed -e "s/@VERSION@/$version/g" \
+            -e "s|https://github.com/keinoaza666-stack/kinu-tune|$source_reference|g" \
+            "$f" > "$work/resources/$lang.lproj/$(basename "$f")"
     done
 done
-sed "s/@VERSION@/$version/g" "$here/installer/distribution.xml" > "$work/distribution.xml"
+sed -e "s/@VERSION@/$version/g" -e "s/@ARCHITECTURE@/$architecture/g" \
+    -e "s/@MIN_OS@/$minimum_os/g" \
+    "$here/installer/distribution.xml" > "$work/distribution.xml"
 
 mkdir -p "$(dirname "$out")"
 productbuild --distribution "$work/distribution.xml" \

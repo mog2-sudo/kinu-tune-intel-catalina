@@ -1,12 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment target" FORCE)
-
-# Ship universal macOS binaries by default. A caller can still request a
-# single-architecture build with -DCMAKE_OSX_ARCHITECTURES=arm64 or x86_64.
-if(CMAKE_HOST_APPLE AND NOT CMAKE_OSX_ARCHITECTURES)
-    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING
-        "macOS target architectures" FORCE)
-endif()
+include(cmake/MacOSCompatibility.cmake)
 
 project(PitchNet VERSION 0.1.4) # Kinu Tune version (based on PitchNet 0.7.2)
 
@@ -66,6 +59,11 @@ option(PITCHNET_REQUIRE_MODELS "Stop configuring when fcpe, the tables or the vo
 set(CUDA_REDIST_URL "" CACHE STRING "Optional URL to download CUDA runtime redistributable zip")
 set(DIRECTML_REDIST_URL "" CACHE STRING "Optional URL to download DirectML redistributable zip")
 set(ONNXRUNTIME_VERSION "1.19.2" CACHE STRING "ONNX Runtime version" FORCE)
+set(PITCHNET_ONNXRUNTIME_ROOT "" CACHE PATH "Prebuilt ONNX Runtime with include/ and lib/ (required for macOS before 11)")
+if(APPLE AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "11.0" AND
+   NOT PITCHNET_ONNXRUNTIME_ROOT)
+    message(FATAL_ERROR "The official ONNX Runtime macOS archive requires macOS 11. Build the runtime for your deployment target and pass -DPITCHNET_ONNXRUNTIME_ROOT=<path>.")
+endif()
 set(GAME_MODELS_VERSION "v1.0.3" CACHE STRING "GAME release tag used to download model assets")
 set(GAME_MODELS_URL "" CACHE STRING "Optional URL to download GAME model zip")
 set(GAME_MODELS_SHA256 "" CACHE STRING "SHA-256 of the zip at GAME_MODELS_URL (the default URL is verified from cmake/DependencyHashes.cmake)")
@@ -130,7 +128,9 @@ if(PITCHNET_ASIO_ENABLED)
 endif()
 
 # Check if ONNX Runtime already exists in build directory
-if(APPLE)
+if(PITCHNET_ONNXRUNTIME_ROOT)
+    set(ONNXRUNTIME_CACHE_DIR "${PITCHNET_ONNXRUNTIME_ROOT}")
+elseif(APPLE)
     # Keep packages for different architecture selections separate so that
     # reconfiguring an existing build cannot accidentally reuse an ARM-only
     # runtime in an Intel or universal build.
@@ -149,6 +149,9 @@ if(EXISTS "${ONNXRUNTIME_CACHE_HEADER}")
     message(STATUS "ONNX Runtime already downloaded, skipping download")
     set(ONNXRUNTIME_ROOT ${ONNXRUNTIME_CACHE_DIR})
 else()
+    if(PITCHNET_ONNXRUNTIME_ROOT)
+        message(FATAL_ERROR "Missing ONNX Runtime header: ${ONNXRUNTIME_CACHE_HEADER}")
+    endif()
     # Detect platform and set download URL. ONNXRUNTIME_PACKAGE_KEY names the
     # archive in cmake/DependencyHashes.cmake so the download can be verified.
     if(WIN32)
@@ -416,7 +419,7 @@ list(APPEND PITCHNET_CORE_SOURCES
     "Source/Utils/OnnxRuntimeLoader.h"
     "Source/Utils/SHA256Utils.cpp"
     "Source/Utils/SHA256Utils.h")
-if(APPLE)
+if(PITCHNET_USE_COREML)
     list(APPEND PITCHNET_CORE_SOURCES
         "Source/Audio/CoreMLVocoderBackend.mm")
 endif()
@@ -901,7 +904,7 @@ if(ONNXRUNTIME_FOUND)
     endif()
 endif()
 
-if(APPLE)
+if(PITCHNET_USE_COREML)
     target_compile_definitions(pitchnet_core PUBLIC HAVE_COREML=1)
     target_link_libraries(pitchnet_core PUBLIC
         "-framework Foundation"
@@ -960,7 +963,7 @@ set(REQUIRED_MODELS
     cent_table.bin
     mel_filterbank.bin
 )
-if(APPLE)
+if(PITCHNET_USE_COREML)
     list(APPEND REQUIRED_MODELS pc_nsf_hifigan.mlmodelc)
 else()
     list(APPEND REQUIRED_MODELS pc_nsf_hifigan.onnx)

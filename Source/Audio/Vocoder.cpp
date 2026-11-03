@@ -174,7 +174,7 @@ Vocoder::~Vocoder()
   onnxSession.reset();
   onnxEnv.reset();
 #endif
-#if __APPLE__
+#ifdef HAVE_COREML
   coreMLBackend.reset();
 #endif
   if (logFile && logFile->is_open())
@@ -227,7 +227,7 @@ bool Vocoder::isOnnxRuntimeAvailable()
 juce::File
 Vocoder::resolvePreferredModelFile(const juce::File &requestedModelPath) const
 {
-#if __APPLE__
+#ifdef HAVE_COREML
   const auto siblingCoreML =
       requestedModelPath.getSiblingFile("pc_nsf_hifigan.mlmodelc");
   if (siblingCoreML.isDirectory())
@@ -239,7 +239,7 @@ Vocoder::resolvePreferredModelFile(const juce::File &requestedModelPath) const
 bool Vocoder::loadModel(const juce::File &modelPath)
 {
   const auto preferredModelPath = resolvePreferredModelFile(modelPath);
-#if __APPLE__
+#ifdef HAVE_COREML
   if (preferredModelPath.hasFileExtension("mlmodelc") ||
       preferredModelPath.isDirectory())
   {
@@ -440,7 +440,7 @@ bool Vocoder::loadModel(const juce::File &modelPath)
         std::string(outputNames.size() > 0 ? outputNames[0] : "none"));
 
     modelFile = preferredModelPath;
-#if __APPLE__
+#ifdef HAVE_COREML
     usingCoreMLModel = false;
     coreMLBackend.reset();
 #endif
@@ -498,7 +498,7 @@ std::vector<float> Vocoder::infer(const std::vector<std::vector<float>> &mel,
   const bool verboseInferLog = isVerboseInferLogEnabled();
   const auto startTotal = std::chrono::high_resolution_clock::now();
 
-#if __APPLE__
+#ifdef HAVE_COREML
   if (usingCoreMLModel && coreMLBackend)
   {
     auto inferCoreMLWithChunkSize = [&](size_t maxChunkFrames) {
@@ -943,7 +943,7 @@ Vocoder::inferChunkLocked(const std::vector<std::vector<float>> &mel,
 }
 #endif
 
-#if __APPLE__
+#ifdef HAVE_COREML
 std::vector<float>
 Vocoder::inferCoreMLChunkLocked(const std::vector<std::vector<float>> &mel,
                                 const std::vector<float> &f0,
@@ -1085,7 +1085,7 @@ bool Vocoder::reloadModel()
   outputTensorScratch.clear();
   loaded = false;
 #endif
-#if __APPLE__
+#ifdef HAVE_COREML
   coreMLBackend.reset();
   usingCoreMLModel = false;
 #endif

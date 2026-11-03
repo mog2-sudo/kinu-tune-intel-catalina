@@ -1,0 +1,32 @@
+Kinu Tune 0.1.4 - Intel Mac / macOS Catalina 10.15.7
+
+Intel (x86_64) 専用です。VST3 と Audio Unit (AU) が含まれます。
+AI リシンセシス・ピッチ解析は CPU を使います。クラシックより合成に時間がかかります。
+This build targets Intel x86_64 and macOS 10.15. AI inference uses the CPU.
+
+簡単なインストール / Installer
+1. Kinu-Tune-0.1.4-macOS-Intel-Catalina.pkg を開きます。
+2. 開けない場合は pkg を右クリックして「開く」を選ぶか、
+   「システム環境設定 > セキュリティとプライバシー > 一般」で「このまま開く」を選びます。
+   このビルドは Apple の公証を受けていません。
+3. 画面に従ってインストールし、DAW を再起動してプラグインを再スキャンします。
+   VST3、AU と AI モデルをユーザーの Library に入れます。管理者パスワードは不要です。
+
+Open the .pkg. If blocked, right-click it and choose Open, or use
+System Preferences > Security & Privacy > General > Open Anyway.
+Restart the DAW and rescan. The build is not notarized.
+
+手動インストール / Manual installation from ZIP
+- Kinu Tune.vst3 -> ~/Library/Audio/Plug-Ins/VST3/
+- Kinu Tune.component -> ~/Library/Audio/Plug-Ins/Components/
+- models -> ~/Library/Application Support/Keinoaza/Kinu Tune/models/
+
+読み込めない場合は、入れたプラグインに対してターミナルで実行します。
+If manual copies are blocked, run these commands for the plug-ins you installed:
+  xattr -dr com.apple.quarantine "$HOME/Library/Audio/Plug-Ins/VST3/Kinu Tune.vst3"
+  xattr -dr com.apple.quarantine "$HOME/Library/Audio/Plug-Ins/Components/Kinu Tune.component"
+
+この版を別の人に渡す場合は、同梱のライセンス文書と、対応する
+Kinu-Tune-0.1.4-Intel-Catalina-source-with-submodules.tar.gz も一緒に渡してください。
+When redistributing, include the license notices and the accompanying complete source archive.
+Kinu Tune: GNU AGPL v3. GAME / PC-NSF-HiFiGAN models: CC BY-NC-SA 4.0.
