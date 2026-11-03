@@ -290,10 +290,14 @@ endif()
 option(PITCHNET_SYNTH_NOTE_DIAGNOSTICS "Log one line per dirty note on every synthesis pass" OFF)
 
 # Create GUI application
+if(APPLE)
+    set(PITCHNET_MACOS_PLIST "<plist><dict><key>LSMinimumSystemVersion</key><string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string></dict></plist>")
+endif()
 juce_add_gui_app(PitchNet
     PRODUCT_NAME "${PITCHNET_PRODUCT_NAME}"
     COMPANY_NAME "${PITCHNET_COMPANY_NAME}"
     BUNDLE_ID "${PITCHNET_BUNDLE_ID}"
+    PLIST_TO_MERGE "${PITCHNET_MACOS_PLIST}"
     COMPANY_COPYRIGHT "${PITCHNET_COPYRIGHT}"
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Resources/images/icon.png"
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/Resources/images/icon.png"
@@ -346,6 +350,7 @@ juce_add_plugin(PitchNetPlugin
     COMPANY_NAME "${PITCHNET_COMPANY_NAME}"
     COMPANY_COPYRIGHT "${PITCHNET_COPYRIGHT}"
     BUNDLE_ID "${PITCHNET_BUNDLE_ID}"
+    PLIST_TO_MERGE "${PITCHNET_MACOS_PLIST}"
     PLUGIN_MANUFACTURER_CODE ${PITCHNET_MANUFACTURER_CODE}
     PLUGIN_CODE ${PITCHNET_PLUGIN_CODE}
     FORMATS ${PITCHNET_PLUGIN_FORMATS}
