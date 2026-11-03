@@ -174,7 +174,7 @@ namespace PlatformPaths
 
     inline juce::File getVocoderModelFile()
     {
-#if JUCE_MAC
+#if JUCE_MAC && defined(HAVE_COREML)
         auto coreMLModel = getModelFile("pc_nsf_hifigan.mlmodelc");
         if (coreMLModel.isDirectory())
             return coreMLModel;

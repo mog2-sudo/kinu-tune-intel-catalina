@@ -30,6 +30,7 @@
 #include "../Source/Utils/Constants.h"
 #include "../Source/Utils/MelSpectrogram.h"
 #include "../Source/Utils/OnnxRuntime.h"
+#include "../Source/Utils/PlatformPaths.h"
 #include "TestAssert.h"
 
 #include <algorithm>
@@ -166,7 +167,20 @@ int main(int argc, char **argv)
 
     // 3. The vocoder resynthesises the tone at the F0 it is given.
     Vocoder vocoder;
+#if JUCE_MAC && !defined(HAVE_COREML)
+    // A prior Apple-silicon install can leave a Core ML model alongside the
+    // ONNX model. Exercise the production selector, not just an explicit path.
+    const auto staleCoreML = models.getChildFile("pc_nsf_hifigan.mlmodelc");
+    const bool createdStaleCoreML = !staleCoreML.exists();
+    CHECK(staleCoreML.createDirectory().wasOk());
+    const auto selectedModel = PlatformPaths::getVocoderModelFile();
+    if (createdStaleCoreML)
+        CHECK(staleCoreML.deleteFile()); // only the empty directory made here
+    CHECK(selectedModel.hasFileExtension("onnx"));
+    CHECK(vocoder.loadModel(selectedModel));
+#else
     CHECK(vocoder.loadModel(models.getChildFile("pc_nsf_hifigan.onnx")));
+#endif
     MelSpectrogram melComputer(kSampleRate, N_FFT, HOP_SIZE, NUM_MELS, FMIN, FMAX);
     const auto mel = melComputer.compute(tone.data(), static_cast<int>(tone.size()));
     CHECK(!mel.empty());
