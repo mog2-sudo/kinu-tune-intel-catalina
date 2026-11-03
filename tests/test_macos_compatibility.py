@@ -69,6 +69,37 @@ class CompatibilityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unresolved"):
             self.audit(binary(dependencies=("@rpath/libonnxruntime.dylib",), rpaths=("@loader_path/../Frameworks",)))
 
+    def test_runtime_exists_but_no_rpath_is_rejected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            bundle = pathlib.Path(folder) / "Kinu Tune.vst3/Contents"
+            (bundle / "MacOS").mkdir(parents=True)
+            (bundle / "Frameworks").mkdir()
+            executable = bundle / "MacOS/Kinu Tune"
+            executable.write_bytes(binary(dependencies=("@rpath/libonnxruntime.dylib",)))
+            (bundle / "Frameworks/libonnxruntime.dylib").write_bytes(binary())
+            with self.assertRaisesRegex(ValueError, "Unresolved"):
+                compatibility.audit_binary(executable)
+
+    def test_runtime_with_loader_rpath_is_accepted(self):
+        with tempfile.TemporaryDirectory() as folder:
+            bundle = pathlib.Path(folder) / "Kinu Tune.vst3/Contents"
+            (bundle / "MacOS").mkdir(parents=True)
+            (bundle / "Frameworks").mkdir()
+            executable = bundle / "MacOS/Kinu Tune"
+            executable.write_bytes(binary(dependencies=("@rpath/libonnxruntime.dylib",),
+                                          rpaths=("@loader_path/../Frameworks",)))
+            (bundle / "Frameworks/libonnxruntime.dylib").write_bytes(binary())
+            compatibility.audit_binary(executable)
+
+    def test_dependency_outside_bundle_is_rejected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = pathlib.Path(folder) / "Kinu Tune.vst3/Contents/MacOS/Kinu Tune"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(binary(dependencies=("@loader_path/../../../outside.dylib",)))
+            (pathlib.Path(folder) / "outside.dylib").write_bytes(binary())
+            with self.assertRaisesRegex(ValueError, "escapes"):
+                compatibility.audit_binary(path)
+
 
 if __name__ == "__main__":
     unittest.main()

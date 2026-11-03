@@ -67,13 +67,14 @@ def audit_binary(path):
             continue
         if dependency.startswith("@rpath/"):
             candidates = [expand(rpath) / dependency[len("@rpath/"):] for rpath in rpaths]
-            # A dylib inherits the loading executable's Frameworks rpath.
-            if bundle:
-                candidates.append(bundle / "Contents/Frameworks" / dependency[len("@rpath/"):])
         elif dependency.startswith(("@loader_path/", "@executable_path/")):
             candidates = [expand(dependency)]
         else:
             raise ValueError(f"Non-portable dependency {dependency}: {path}")
+        root = (bundle if bundle else path.parent).resolve()
+        if any(candidate.is_file() and not candidate.resolve().is_relative_to(root)
+               for candidate in candidates):
+            raise ValueError(f"Dependency escapes the distributed bundle: {dependency}: {path}")
         if not any(candidate.is_file() for candidate in candidates):
             raise ValueError(f"Unresolved dependency {dependency}: {path}")
     return {"path": str(path), "architecture": "x86_64",
@@ -95,6 +96,8 @@ def audit_release(folder):
         if not (bundle / "Contents/Frameworks/libonnxruntime.dylib").is_file():
             raise ValueError(f"Missing bundled ONNX Runtime: {bundle}")
         for path in sorted(bundle.rglob("*")):
+            if path.is_symlink() and not path.resolve().is_relative_to(bundle.resolve()):
+                raise ValueError(f"Symlink escapes the distributed bundle: {path}")
             if not path.is_file() or path.is_symlink():
                 continue
             with path.open("rb") as file:

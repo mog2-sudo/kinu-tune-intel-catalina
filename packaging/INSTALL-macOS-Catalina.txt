@@ -3,6 +3,8 @@ Kinu Tune 0.1.4 - Intel Mac / macOS Catalina 10.15.7
 Intel (x86_64) 専用です。VST3 と Audio Unit (AU) が含まれます。
 AI リシンセシス・ピッチ解析は CPU を使います。クラシックより合成に時間がかかります。
 This build targets Intel x86_64 and macOS 10.15. AI inference uses the CPU.
+macOS 10.15.7 の実機・DAW での動作は、このビルド環境では未確認です。
+Actual Catalina hardware/DAW testing is still required.
 
 簡単なインストール / Installer
 1. Kinu-Tune-0.1.4-macOS-Intel-Catalina.pkg を開きます。
